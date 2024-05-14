@@ -46,7 +46,7 @@ fn main() {
                 }
                 Err(err) => {
                     eprintln!("{}", err);
-                    match try_again() {
+                    match try_again(&mut p) {
                         Ok(true) => {
                             first_time = false;
                             continue;
@@ -69,9 +69,16 @@ fn main() {
             Ok(res) => match find_serifu(res) {
                 Ok(matches) => {
                     for mat in matches {
-                        print!("\n{}\non line {}\n in {}\n", mat.serifu, mat.line, mat.path);
+                        print!(
+                            "
+                        \x1b[1;34m{}
+                        \x1b[0m\x1b[1;32mon line {}
+                        \x1b[0m\x1b[1;31m in {}
+                        \x1b[0m",
+                            mat.serifu, mat.line, mat.path
+                        );
                     }
-                    match try_again() {
+                    match try_again(&mut p) {
                         Ok(true) => {
                             first_time = false;
                             continue;
@@ -84,7 +91,7 @@ fn main() {
                 }
                 Err(err) => {
                     eprintln!("{}", err);
-                    match try_again() {
+                    match try_again(&mut p) {
                         Ok(true) => {
                             first_time = false;
                             continue;
@@ -98,7 +105,7 @@ fn main() {
             },
             Err(err) => {
                 eprintln!("{}", err);
-                match try_again() {
+                match try_again(&mut p) {
                     Ok(true) => {
                         first_time = false;
                         continue;
@@ -152,7 +159,7 @@ fn find_serifu(res: PromptResult) -> Result<Vec<MatchResult>, Error> {
     Ok(matches)
 }
 
-fn try_again() -> Result<bool, Error> {
+fn try_again<E: std::io::Write>(p: &mut Promptuity<E>) -> Result<bool, Error> {
     let mut term = Term::default();
     let mut theme = FancyTheme::default();
     let mut p = Promptuity::new(&mut term, &mut theme);
@@ -196,6 +203,8 @@ fn prompt_select_folders<E: std::io::Write>(
     p: &mut Promptuity<E>,
     path: String,
 ) -> Result<PromptResult, Error> {
+    p.term().clear()?;
+
     let mut final_paths_vec: Vec<String> = Vec::new();
 
     if let Ok(entries) = read_dir(path) {
