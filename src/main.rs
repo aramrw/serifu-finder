@@ -25,7 +25,45 @@ struct MatchResult {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let mut term = Term::default();
+    let mut theme = FancyTheme::default();
+    let mut p = Promptuity::new(&mut term, &mut theme);
+
+    p.term().clear().unwrap();
+
+    let path = prompt_path(&mut p).unwrap();
+
+    loop {
+        match ask_prompts(&mut p, path.clone()) {
+            Ok(res) => match find_serifu(res) {
+                Ok(matches) => {
+                    for mat in matches {
+                        print!("\n{}\non line {}\n in {}\n", mat.serifu, mat.line, mat.path);
+                    }
+                    match try_again() {
+                        Ok(true) => continue,
+                        Ok(false) | Err(_) => break,
+                    }
+                }
+                Err(err) => {
+                    eprintln!("{}", err);
+                    match try_again() {
+                        Ok(true) => continue,
+                        Ok(false) | Err(_) => break,
+                    }
+                }
+            },
+            Err(err) => {
+                eprintln!("{}", err);
+                match try_again() {
+                    Ok(true) => continue,
+                    Ok(false) | Err(_) => break,
+                }
+            }
+        }
+    }
+}
+
 fn find_serifu(res: PromptResult) -> Result<Vec<MatchResult>, Error> {
     let valid_sub_exts: Vec<&str> = vec!["srt", "ass", "ssa", "vtt", "stl", "scc", "ttml", "sbv"];
 
