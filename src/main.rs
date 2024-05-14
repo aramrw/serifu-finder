@@ -121,7 +121,14 @@ fn try_again() -> Result<bool, Error> {
 fn prompt_path<E: std::io::Write>(
     p: &mut Promptuity<E>,
 ) -> Result<String, Error> {
+fn use_previous_path<E: std::io::Write>(p: &mut Promptuity<E>, path: &str) -> Result<bool, Error> {
+    p.with_intro(path.to_string()).begin()?;
+    let confirm = p.prompt(Confirm::new("Use Previous Path?").with_default(false))?;
 
+    Ok(confirm)
+}
+
+fn prompt_path<E: std::io::Write>(p: &mut Promptuity<E>) -> Result<String, Error> {
     let mut path = p
         .prompt(Input::new("Enter Path to Subtitle Files").with_placeholder("~\\Desktop"))?
         .trim_matches('\"')
