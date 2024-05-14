@@ -49,3 +49,57 @@ fn prompt_path<E: std::io::Write>(
 
     Ok(path)
 }
+
+fn ask_prompts<E: std::io::Write>(
+    p: &mut Promptuity<E>,
+    path: String,
+) -> Result<PromptResult, Error> {
+
+    p.term().clear()?;
+    p.with_intro("Serifu Finder").begin()?;
+
+    let mut final_paths_vec: Vec<String> = Vec::new();
+
+    if let Ok(entries) = read_dir(path) {
+        for entry in entries.flatten() {
+            if let Ok(metadata) = entry.metadata() {
+                if metadata.is_dir() {
+                    if let Some(str_path) = entry.path().to_str() {
+                        final_paths_vec.push(str_path.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    let options: Vec<MultiSelectOption<String>> = final_paths_vec
+        .iter()
+        .map(|path| MultiSelectOption::new(path.clone().rsplit_once('\\').unwrap().1, path.clone()))
+        .collect();
+
+    let selected_paths = p.prompt(
+        MultiSelect::new("Select Which Folders to Search", options)
+            .with_hint("Select w/ Space | Submit w/ Enter")
+            .with_required(true),
+    )?;
+
+    let serifu = p
+        .prompt(Input::new("Enter Serifu to Find").with_required(true))?
+        .trim_matches('\"')
+        .to_string();
+
+    p.with_outro(format!(
+        "Searching through {} folders for `{}`...",
+        selected_paths.len(),
+        serifu
+    ));
+
+    p.finish()?;
+
+    Ok(PromptResult {
+        serifu,
+        paths: selected_paths,
+    })
+}
+
+
