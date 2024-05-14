@@ -26,6 +26,18 @@ struct MatchResult {
 
 fn main() {
     println!("Hello, world!");
+fn try_again() -> Result<bool, Error> {
+    let mut term = Term::default();
+    let mut theme = FancyTheme::default();
+    let mut p = Promptuity::new(&mut term, &mut theme);
+
+    println!("\n");
+    p.with_intro("Try again?").begin()?;
+    let confirm = p.prompt(Confirm::new("Would You Like To Try Again?").with_default(false))?;
+
+    Ok(confirm)
+}
+
 fn prompt_path<E: std::io::Write>(
     p: &mut Promptuity<E>,
 ) -> Result<String, Error> {
