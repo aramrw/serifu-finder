@@ -26,6 +26,48 @@ struct MatchResult {
 
 fn main() {
     println!("Hello, world!");
+fn find_serifu(res: PromptResult) -> Result<Vec<MatchResult>, Error> {
+    let valid_sub_exts: Vec<&str> = vec!["srt", "ass", "ssa", "vtt", "stl", "scc", "ttml", "sbv"];
+
+    let mut valid_sub_file_paths: Vec<String> = Vec::new();
+
+    // validate subtitle files before reading them
+    for dir in res.paths {
+        let entries = read_dir(dir)?.flatten();
+        for file in entries {
+            if let Some(ext) = file.path().extension() {
+                let ext_str = ext.to_str().unwrap_or("");
+                if valid_sub_exts.contains(&ext_str) {
+                    if let Some(path) = file.path().to_str() {
+                        valid_sub_file_paths.push(path.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    let mut matches: Vec<MatchResult> = Vec::new();
+
+    for path in valid_sub_file_paths {
+        let file = File::open(&path)?;
+        let reader = BufReader::new(file);
+
+        reader.lines().enumerate().for_each(|(i, line)| {
+            let line = line.as_ref().unwrap();
+            // Replace this with your condition
+            if line.contains(&res.serifu) {
+                matches.push(MatchResult {
+                    path: path.clone(),
+                    serifu: line.to_string(),
+                    line: i as u32,
+                })
+            }
+        });
+    }
+
+    Ok(matches)
+}
+
 fn try_again() -> Result<bool, Error> {
     let mut term = Term::default();
     let mut theme = FancyTheme::default();
