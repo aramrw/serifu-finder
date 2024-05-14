@@ -28,35 +28,81 @@ fn main() {
     let mut term = Term::default();
     let mut theme = FancyTheme::default();
     let mut p = Promptuity::new(&mut term, &mut theme);
+    let mut first_time: bool = true;
 
-    p.term().clear().unwrap();
-
-    let path = prompt_path(&mut p).unwrap();
+    let mut path = String::new();
 
     loop {
-        match ask_prompts(&mut p, path.clone()) {
+        if !first_time {
+            match use_previous_path(&mut p, &path) {
+                Ok(confirm) => {
+                    if confirm {
+                    } else {
+                        p.term().clear().unwrap();
+                        p.with_intro("Serifu Finder").begin().unwrap();
+
+                        path = prompt_path(&mut p).unwrap();
+                    }
+                }
+                Err(err) => {
+                    eprintln!("{}", err);
+                    match try_again() {
+                        Ok(true) => {
+                            first_time = false;
+                            continue;
+                        }
+                        Ok(false) | Err(_) => {
+                            first_time = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        } else {
+            p.term().clear().unwrap();
+            p.with_intro("Serifu Finder").begin().unwrap();
+
+            path = prompt_path(&mut p).unwrap();
+        }
+
+        match prompt_select_folders(&mut p, path.clone()) {
             Ok(res) => match find_serifu(res) {
                 Ok(matches) => {
                     for mat in matches {
                         print!("\n{}\non line {}\n in {}\n", mat.serifu, mat.line, mat.path);
                     }
                     match try_again() {
-                        Ok(true) => continue,
-                        Ok(false) | Err(_) => break,
+                        Ok(true) => {
+                            first_time = false;
+                            continue;
+                        }
+                        Ok(false) | Err(_) => {
+                            first_time = true;
+                            break;
+                        }
                     }
                 }
                 Err(err) => {
                     eprintln!("{}", err);
                     match try_again() {
-                        Ok(true) => continue,
-                        Ok(false) | Err(_) => break,
+                        Ok(true) => {
+                            first_time = false;
+                            continue;
+                        }
+                        Ok(false) | Err(_) => {
+                            first_time = true;
+                            break;
+                        }
                     }
                 }
             },
             Err(err) => {
                 eprintln!("{}", err);
                 match try_again() {
-                    Ok(true) => continue,
+                    Ok(true) => {
+                        first_time = false;
+                        continue;
+                    }
                     Ok(false) | Err(_) => break,
                 }
             }
@@ -118,9 +164,6 @@ fn try_again() -> Result<bool, Error> {
     Ok(confirm)
 }
 
-fn prompt_path<E: std::io::Write>(
-    p: &mut Promptuity<E>,
-) -> Result<String, Error> {
 fn use_previous_path<E: std::io::Write>(p: &mut Promptuity<E>, path: &str) -> Result<bool, Error> {
     p.with_intro(path.to_string()).begin()?;
     let confirm = p.prompt(Confirm::new("Use Previous Path?").with_default(false))?;
@@ -149,14 +192,10 @@ fn prompt_path<E: std::io::Write>(p: &mut Promptuity<E>) -> Result<String, Error
     Ok(path)
 }
 
-fn ask_prompts<E: std::io::Write>(
+fn prompt_select_folders<E: std::io::Write>(
     p: &mut Promptuity<E>,
     path: String,
 ) -> Result<PromptResult, Error> {
-
-    p.term().clear()?;
-    p.with_intro("Serifu Finder").begin()?;
-
     let mut final_paths_vec: Vec<String> = Vec::new();
 
     if let Ok(entries) = read_dir(path) {
@@ -200,5 +239,3 @@ fn ask_prompts<E: std::io::Write>(
         paths: selected_paths,
     })
 }
-
-
