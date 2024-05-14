@@ -26,4 +26,26 @@ struct MatchResult {
 
 fn main() {
     println!("Hello, world!");
+fn prompt_path<E: std::io::Write>(
+    p: &mut Promptuity<E>,
+) -> Result<String, Error> {
+
+    let mut path = p
+        .prompt(Input::new("Enter Path to Subtitle Files").with_placeholder("~\\Desktop"))?
+        .trim_matches('\"')
+        .to_string();
+
+    while !Path::new(&path).exists() || !Path::new(&path).is_dir() {
+        if !Path::new(&path).exists() {
+            eprintln!("`{}` does not exist.", path);
+        } else {
+            eprintln!("`{}` is not a directory.", path);
+        }
+        path = p
+            .prompt(Input::new("Enter Path to Subtitle Files").with_placeholder("~\\Desktop"))?
+            .trim_matches('\"')
+            .to_string();
+    }
+
+    Ok(path)
 }
