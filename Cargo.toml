@@ -1,9 +1,12 @@
 [package]
-name = "serifu-finder"
+name = "serifu_finder"
 version = "0.1.0"
+authors = ["aramrw"]
+license = "MIT"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-promptuity = "0.0.5"
+crossterm = { version = "0.28.1", features = ["event-stream"] }
+futures = "0.3.30"
+ratatui = "0.28.0"
+tokio = { version = "1.39.3", features = ["full"] }
